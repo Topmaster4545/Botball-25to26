@@ -22,11 +22,17 @@ struct Motor motorBackRight  = { 0, 1250 };
 
 // SERVOS --------------------------------------------------------
 
-int armPort = 0;
-void setArmPosition(int pos) // 0/2047 = up/down
+struct Servo 
 {
-    set_servo_position(armPort,pos);
+	int port;
+};
+
+void setServoPosition(struct Servo s, int pos) // 0/2047 = up/down
+{
+    set_servo_position(s.port, pos);
 } 
+
+struct Servo servoArm = { 0 };
 
 // SENSORS --------------------------------------------------------
 
@@ -49,25 +55,25 @@ struct Sensor distanceSensor = { 3, 2250 };
 
 // SENSOR CONDITIONS -----------------------------------------------
 
-int untilSeesTapeLeft(void) // at least one
+int seesTapeLeft(void) // at least one
 {
-	return !isSensorAboveThreshold(groundSensorLeft);
+	return isSensorAboveThreshold(groundSensorLeft);
 }
 
-int untilSeesTapeRight(void) // at least one
+int seesTapeRight(void) // at least one
 {
-	return !isSensorAboveThreshold(groundSensorRight);
+	return isSensorAboveThreshold(groundSensorRight);
 }
 
-int untilBothSeesTape(void)
+int bothSeesTape(void)
 {
-	return !isSensorAboveThreshold(groundSensorLeft) ||
-           !isSensorAboveThreshold(groundSensorRight);
+	return isSensorAboveThreshold(groundSensorLeft) &&
+           isSensorAboveThreshold(groundSensorRight);
 }
 
-int untilSeesWall(void)
+int seesWall(void)
 {
-	return !isSensorAboveThreshold(distanceSensor);
+	return isSensorAboveThreshold(distanceSensor);
 }
 
 typedef int (*conditionFunction)(void);
@@ -84,50 +90,17 @@ void moveRobot(int dir) // -1,0,1 = back, stop, forward
     setMotorVelocity(motorBackRight, dir);
 }
 
-void rotateRobot(int deg, int time) // -1, 1 (only supports left and right 90d currently)
-{	
+void rotateRobot(int deg)
+{   
     setMotorVelocity(motorFrontLeft, deg);
     setMotorVelocity(motorFrontRight, -deg);
     setMotorVelocity(motorBackLeft, deg);
     setMotorVelocity(motorBackRight, -deg);
-    msleep(time);
-    moveRobot(0);
 }
 
 // higher move funcctionss
 
-void rotateRobotColor(int deg, char sensor)
-{
-    
-    if(sensor=='L')
-    {
-        
-        while (!isSensorAboveThreshold(groundSensorLeft))
-        {
-            setMotorVelocity(motorFrontLeft, deg);
-            setMotorVelocity(motorFrontRight, -deg);
-            setMotorVelocity(motorBackLeft, deg);
-            setMotorVelocity(motorBackRight, -deg);
-        }   
-    } else
-    {
-        while (!isSensorAboveThreshold(groundSensorRight))
-        {
-            setMotorVelocity(motorFrontLeft, deg);
-            setMotorVelocity(motorFrontRight, -deg);
-            setMotorVelocity(motorBackLeft, deg);
-            setMotorVelocity(motorBackRight, -deg);
-        }   
-    }
-}
-
-void move(int dir, conditionFunction condition)
-{
-	while (condition()) {
-    	moveRobot(1*dir);
-    }
-    moveRobot(0);
-}
+// basic move
 
 void moveTime(int dir, int time)
 {
@@ -136,40 +109,73 @@ void moveTime(int dir, int time)
     moveRobot(0);
 }
 
-void moveCorrected(int dir, conditionFunction condition)
+void moveUntil(int dir, conditionFunction condition)
 {
-	while (condition()) 
+	while (!condition()) // means repeat until condition is true
     {
-    	moveRobot(1);
-        if (isSensorAboveThreshold(groundSensorLeft))
-        {
-        	rotateRobot(-1, 10);
-        }
-        else if (isSensorAboveThreshold(groundSensorRight)) 
-       	{
-        	rotateRobot(1, 10);
-        }
+    	moveRobot(dir);
     }
     moveRobot(0);
 }
 
+// rotate
+
+void rotateTime(int deg, int time) // -1, 1 (only supports left and right 90d currently)
+{	
+    rotateRobot(deg);
+    msleep(time);
+    rotateRobot(0);
+}
+
+void rotateUntil(int deg, conditionFunction condition)
+{
+    while (!condition())
+    {
+        rotateRobot(deg);
+    }
+    rotateRobot(0);
+}
+
+// corrected
+
+void moveCorrected(int dir)
+{
+    moveRobot(1);
+    if (seesTapeLeft())
+    {
+        rotateTime(-1, 10);
+    }
+    else if (seesTapeRight()) 
+    {
+        rotateTime(1, 10);
+    }
+}
+
 void moveCorrectedTime(int dir, int time)
 {
-	for(int i=0;i<=time;i++)
+	for (int i = 0; i <= time; i++)
     {
-    	moveRobot(1);
-        if (isSensorAboveThreshold(groundSensorLeft))
-        {
-        	rotateRobot(-1, 10);
-        }
-        else if (isSensorAboveThreshold(groundSensorRight)) 
-       	{
-        	rotateRobot(1, 10);
-        }
+    	moveCorrected(dir);
         msleep(1); //Changing this value doesnt effect speed unless >1
         printf("%5d",i);
     }
     moveRobot(0);
+}
+
+void moveCorrectedUntil(int dir, conditionFunction condition)
+{
+	while (!condition())
+    {
+    	moveCorrected(dir);
+    }
+    moveRobot(0);
+}
+
+// SERVO
+
+void setArmPosition(int pos)
+{
+	setServoPosition(servoArm, pos);
 }
 
 // MAIN FUNCTIONS ----------------------------------
@@ -178,15 +184,12 @@ void run();
 
 void waitUntilLight()
 {
-    while(!isSensorAboveThreshold(lightSensor))
-    {
-
-    }
+    while(!isSensorAboveThreshold(lightSensor)) {}
 }
 
 int main()
 {
-    enable_servo(armPort);
+    enable_servo(servoArm.port);
     //test individual functions easily (make sure to put break)
     switch(1)
     {
@@ -207,7 +210,13 @@ int main()
             setArmPosition(0);
             break;
         case 4:
-            move(1, untilSeesTapeLeft);
+			moveUntil(1, seesWall);
+            break;
+        case 5:
+            while(1==1)
+            {
+                moveCorrected(1);
+            }
         default:
             break;
     }
@@ -215,85 +224,90 @@ int main()
 }
 
 void run()
-{
-    // NOTE: functions now take a condition parameter so 
-    // instead of "moveUntilSeesTape(1);"
-    // it is "move(1, untilSeesTape);"
-    
+{    
     // skip 2 lines of tapeL
     
-    //moveCorrectedSingleTime(1,'L',2000);
     setArmPosition(0);
     msleep(1000);
     setArmPosition(1000);
-	move(1, untilSeesTapeLeft);
-    moveTime(1,1500);
-    move(1, untilSeesTapeLeft);
+	moveUntil(1, seesTapeLeft);
+    moveTime(1,1000);
+    moveUntil(1, seesTapeLeft);
     moveTime(1,1750);
     msleep(1000);
 
     //rotate and move along the line
-    rotateRobotColor(1,'R');
+    rotateUntil(1, seesTapeRight);
     moveTime(-1,500);
+    rotateTime(1, 100);
     setArmPosition(2024);
-    moveCorrected(1, untilBothSeesTape);
+    msleep(100);
+    moveCorrectedUntil(1, bothSeesTape);
     moveTime(1,2000);
-    moveCorrected(1, untilBothSeesTape);
+    moveCorrectedUntil(1, bothSeesTape);
 
     // turn 180 and go back
-    rotateRobot(1,2500);
-    rotateRobotColor(1,'R');
-   	moveCorrected(1, untilBothSeesTape);
+    rotateTime(1,2500);
+    rotateUntil(1, seesTapeRight);
+    setArmPosition(1950);
+   	moveCorrectedUntil(1, bothSeesTape);
     moveTime(1,1500);
-
-
     
     //Turns to starting area
-    setArmPosition(1950);//DELETE THIS AFTER TESTING
-    moveCorrected(1, untilSeesWall);
-    rotateRobot(-1,800);
-    setArmPosition(1900);
-    move(1, untilSeesTapeLeft);
-    rotateRobotColor(-1,'R');
+    setArmPosition(1950);
+    moveCorrectedUntil(1, seesWall);
+    rotateTime(-1,725);
+    setArmPosition(2000);
+    moveUntil(1, seesTapeLeft);
+    rotateUntil(-1, seesTapeRight);
     moveTime(1,1250);
-    move(-1, untilSeesTapeRight);
-    //moveTime(-1,250);
+    moveUntil(-1, seesTapeRight);
 
     //Further turning  to ram into side wall pvc
-    rotateRobotColor(-1,'L');
+    rotateUntil(-1, seesTapeLeft);
+    setArmPosition(1900);
     moveTime(1,2500);
+    rotateTime(-1,500);
+    moveUntil(-1, bothSeesTape);
     setArmPosition(0);
-    move(-1,untilBothSeesTape);
     moveTime(1,1000);
-    rotateRobotColor(1,'L');
+    rotateUntil(1, seesTapeLeft);
     moveCorrectedTime(1,1000);
     
     //Even more turning to turn to corner and align itself with ramp
-    rotateRobot(-1,2000);
-    moveTime(1,750);
-    setArmPosition(0);
-    rotateRobot(-1,750);
-    rotateRobot(1,750);
-    setArmPosition(0);
-    moveTime(2250);
-    rotateRobot(-1,2000);
+    rotateTime(-1,2000);
+    moveTime(1,3500);
+    rotateTime(-1,2000);
+    setArmPosition(866);
     moveTime(-1,1000);
-    rotateRobot(-1,250);
-    setArmPosition(2024);
+    moveTime(1,2000);
+    rotateTime(-1,250);
+    moveTime(1,500);
+    
+    rotateTime(1,250);
+    moveTime(-1,3000);
+    moveTime(1,1250);
+    rotateTime(1,375);
+    setArmPosition(2047);
     msleep(750);
-    rotateRobot(1,325);
+    rotateTime(-1,275);
     
     //Moves until it hits the tape in upperstart box
-    move(1,untilBothSeesTape);
-    moveTime(1,1500);
+    moveUntil(1, bothSeesTape);
+    moveTime(1,750);
     moveCorrectedTime(1,1100);
     setArmPosition(2045);
-    moveTime(1,4500);
-    moveCorrected(1,untilBothSeesTape);
-    setArmPosition(0);
-    moveTime(1,4000);
-    rotateRobot(-1,2400);
+    moveTime(1,2000);
+    moveTime(-1,500);
     moveTime(1,750);
+    moveCorrectedUntil(1, bothSeesTape);
+    setArmPosition(0);
+    moveTime(1,2250);
+    moveTime(-1,1000);
+    rotateTime(-1,750);
+    moveTime(1,2750);
+    rotateTime(-1,1250);
+    //setArmPosition(715);
     
     
     /*
@@ -308,103 +322,3 @@ void run()
     
     //turn and go to ramp*/
 }
-
-// DEPRECIATED 
-/*
-void moveUntilSeesWall(int val){
-    while(!isSensorAboveThreshold(distanceSensor))
-    {
-        moveRobot(1);
-    }
-    moveRobot(0);
-}
-
-void moveUntilSeesTape(int dir) {
-    while (!isSensorAboveThreshold(groundSensorLeft))
-    {
-    	moveRobot(1);
-    }
-    moveRobot(0);
-}
-
-void moveUntilSeesBothTape(int dir) {
- 	while (!isSensorAboveThreshold(groundSensorLeft) &&
-           !isSensorAboveThreshold(groundSensorRight))
-    {
-    	moveRobot(1);
-    }
-    moveRobot(0);
-}
-
-void moveWithCorrection(int dir)
-{
-    while (!isSensorAboveThreshold(groundSensorLeft) ||
-           !isSensorAboveThreshold(groundSensorRight)) 
-    {
-        
-    	moveRobot(1);
-        if (isSensorAboveThreshold(groundSensorLeft)) {
-        	rotateRobot(-1, 200);
-        }
-        else if (isSensorAboveThreshold(groundSensorRight)) {
-        	rotateRobot(1, 200);
-        }
-    }
-    moveRobot(0);
-}
-
-void moveWithCorrectionD(int dir)
-{
-    while (!isSensorAboveThreshold(distanceSensor)) 
-    {
-    	moveRobot(1);
-        if (isSensorAboveThreshold(groundSensorLeft)) {
-        	rotateRobot(-1, 200);
-        }
-        else if (isSensorAboveThreshold(groundSensorRight)) {
-        	rotateRobot(1, 200);
-        }
-    }
-    moveRobot(0);
-}
-*/
-/*
-void pivotRobot(int deg, int time)
-{
-    if(deg==1)
-    {
-        setMotorVelocity(motorFrontLeft, deg);
-    	setMotorVelocity(motorBackLeft, deg);
-    } else
-    {
-        setMotorVelocity(motorFrontRight, deg);
-    	setMotorVelocity(motorBackRight, deg);
-    }
-    msleep(time);
-    setMotorVelocity(motorFrontLeft, 0);
-    setMotorVelocity(motorFrontRight, 0);
-    setMotorVelocity(motorBackLeft, 0);
-    setMotorVelocity(motorBackRight, 0);
-}
-*/
-/*
-
-void moveCorrectedSingleTime(int dir, char sensor, int time)
-{
-    for(int i=0;i<=time;i++)
-    {
-    	moveRobot(1);
-        if(sensor=='L'&&!isSensorAboveThreshold(groundSensorLeft))
-        {
-        	rotateRobot(-1, 10);
-            rotateRobot(1,150);
-        } else if(sensor=='R'&&!isSensorAboveThreshold(groundSensorRight))
-        {
-            rotateRobot(1,10);
-        }
-        msleep(1); //Changing this value doesnt effect speed unless >1
-        printf("%5d",i);
-    }
-    moveRobot(0);
-}
-*/
