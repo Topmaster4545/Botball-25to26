@@ -224,7 +224,7 @@ int main()
 }
 
 void run()
-{    
+{    /*
     // skip 2 lines of tapeL
     
     setArmPosition(0);
@@ -273,9 +273,9 @@ void run()
     moveTime(1,1000);
     rotateUntil(1, seesTapeLeft);
     moveCorrectedTime(1,1000);
-    
+    */
     //Even more turning to turn to corner and align itself with ramp
-    rotateTime(-1,2000);
+   /* rotateTime(-1,2000);
     moveTime(1,3500);
     rotateTime(-1,2000);
     setArmPosition(866);
@@ -291,8 +291,9 @@ void run()
     setArmPosition(2047);
     msleep(750);
     rotateTime(-1,275);
-    
+    */
     //Moves until it hits the tape in upperstart box
+    setArmPosition(2045);
     moveUntil(1, bothSeesTape);
     moveTime(1,750);
     moveCorrectedTime(1,1100);
@@ -301,13 +302,13 @@ void run()
     moveTime(-1,500);
     moveTime(1,750);
     moveCorrectedUntil(1, bothSeesTape);
+    rotateTime(1,1000);
     setArmPosition(0);
-    moveTime(1,2250);
-    moveTime(-1,1000);
-    rotateTime(-1,750);
-    moveTime(1,2750);
-    rotateTime(-1,1250);
-    //setArmPosition(715);
+    moveTime(-1,2250);
+    rotateTime(-1,700);
+    moveUntil(1, seesTapeLeft);
+    rotateTime(1,300);
+    moveTime(1,600);
     
     
     /*
