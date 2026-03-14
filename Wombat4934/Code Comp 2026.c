@@ -143,11 +143,11 @@ void moveCorrected(int dir)
     moveRobot(1);
     if (seesTapeLeft())
     {
-        rotateTime(-1, 10);
+        rotateTime(-1, 50);
     }
     else if (seesTapeRight()) 
     {
-        rotateTime(1, 10);
+        rotateTime(1, 50);
     }
 }
 
@@ -190,6 +190,8 @@ void waitUntilLight()
 int main()
 {
     enable_servo(servoArm.port);
+    setArmPosition(0);
+    msleep(1000);
     //test individual functions easily (make sure to put break)
     switch(1)
     {
@@ -213,10 +215,7 @@ int main()
 			moveUntil(1, seesWall);
             break;
         case 5:
-            while(1==1)
-            {
-                moveCorrected(1);
-            }
+            rotateUntil(1, seesTapeLeft);
         default:
             break;
     }
@@ -224,17 +223,14 @@ int main()
 }
 
 void run()
-{    /*
+{    
     // skip 2 lines of tapeL
-    
-    setArmPosition(0);
-    msleep(1000);
     setArmPosition(1000);
-	moveUntil(1, seesTapeLeft);
+	moveUntil(1, bothSeesTape);
     moveTime(1,1000);
-    moveUntil(1, seesTapeLeft);
+    moveUntil(1, bothSeesTape);
     moveTime(1,1750);
-    msleep(1000);
+    printf("WHA");
 
     //rotate and move along the line
     rotateUntil(1, seesTapeRight);
@@ -268,14 +264,14 @@ void run()
     setArmPosition(1900);
     moveTime(1,2500);
     rotateTime(-1,500);
-    moveUntil(-1, bothSeesTape);
+    moveUntil(-1, seesTapeRight);
     setArmPosition(0);
     moveTime(1,1000);
     rotateUntil(1, seesTapeLeft);
     moveCorrectedTime(1,1000);
-    */
+    
     //Even more turning to turn to corner and align itself with ramp
-   /* rotateTime(-1,2000);
+    rotateTime(-1,2000);
     moveTime(1,3500);
     rotateTime(-1,2000);
     setArmPosition(866);
@@ -291,24 +287,25 @@ void run()
     setArmPosition(2047);
     msleep(750);
     rotateTime(-1,275);
-    */
+    
     //Moves until it hits the tape in upperstart box
     setArmPosition(2045);
     moveUntil(1, bothSeesTape);
     moveTime(1,750);
-    moveCorrectedTime(1,1100);
+    moveCorrectedTime(1,1250);
     setArmPosition(2045);
-    moveTime(1,2000);
-    moveTime(-1,500);
+    moveTime(1,4000);
+    rotateTime(-1,500);
+    rotateTime(1,750);
+    moveCorrectedUntil(1,bothSeesTape);
     moveTime(1,750);
-    moveCorrectedUntil(1, bothSeesTape);
-    rotateTime(1,1000);
-    setArmPosition(0);
+    rotateTime(1,750);
+    setArmPosition(1000);
     moveTime(-1,2250);
     rotateTime(-1,700);
     moveUntil(1, seesTapeLeft);
     rotateTime(1,300);
-    moveTime(1,600);
+    moveTime(1,2500);
     
     
     /*
