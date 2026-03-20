@@ -300,12 +300,12 @@ void run()
     moveCorrectedUntil(1,bothSeesTape);
     moveTime(1,750);
     rotateTime(1,750);
-    setArmPosition(1000);
-    moveTime(-1,2250);
+    setArmPosition(494);
+    moveTime(-1,2800);
     rotateTime(-1,700);
     moveUntil(1, seesTapeLeft);
-    rotateTime(1,300);
-    moveTime(1,2500);
+    rotateTime(1,515);
+    moveTime(1,3020);
     
     
     /*
