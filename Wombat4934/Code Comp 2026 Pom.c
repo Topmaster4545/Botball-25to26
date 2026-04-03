@@ -308,15 +308,5 @@ void run()
     moveTime(1,3020);
     
     
-    /*
-    pivotRobot(-1,1500);
-    move(1, untilSeesTapeLeft);
-    rotateRobotColor(-1,'L');
-    setArmPosition(1250);
-    moveTime(1,1000);
-    move(1, untilSeesTapeLeft);*/
-    
-    
-    
     //turn and go to ramp*/
 }
