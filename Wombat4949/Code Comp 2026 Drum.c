@@ -231,10 +231,10 @@ void incrementDebug()
 int main()
 {
     enable_servos();
+    setDoorPosition(2047);
     /*mtp(2,100,0);
     setArmPositionInc(50);
-    setDoorPosition(1525);
-    msleep(5000);*/ //DELETE OR LESSEN TIME BEFORE COMP
+    msleep(5000); *///DELETE OR LESSEN TIME BEFORE COMP
     //test individual functions easily (make sure to put break)
     switch(1)
     {
@@ -263,8 +263,8 @@ void run()
     
     //Moves out from starting box to the drums
     camera_open();
-    printf("starting\n");
-    /*double startTime=seconds();
+    /*printf("starting\n");
+    double startTime=seconds();
     setArmPositionInc(950);
     moveUntil(1, bothSeesTape);
     moveTime(1,2750);
@@ -293,13 +293,15 @@ void run()
         }
         printf("pipe detected! ");
         msleep(600);
+        setDoorPosition(500);
         mrp(2,75,225);
-        msleep(1000);
+        msleep(2000);
         for(int i=0;i<8;i++)
         {
             printf("%d,",colorList[i]);
         }
         printf("\n");
+        setDoorPosition(2047);
         //msleep(5000);
         newImage();
         
