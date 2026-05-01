@@ -17,7 +17,7 @@ void setMotorVelocity(struct Motor m, int modifier)
 }
 
 struct Motor motorFrontLeft  = { 1, 1250 };  //1150
-struct Motor motorFrontRight = { 0, 1400 };  //1400
+struct Motor motorFrontRight = { 0, 1500 };  //1400
 struct Motor motorRevolver   = { 1, -1250 };
 
 // SERVOS --------------------------------------------------------
@@ -52,8 +52,8 @@ int isSensorAboveThreshold(struct Sensor s)
 struct Sensor lightSensor = { 3, 2800 };
 struct Sensor groundSensorLeft = { 2, 3300 };
 struct Sensor groundSensorRight = { 1, 3300 };
-struct Sensor distanceSensorStart = { 0, 1250 };
-struct Sensor distanceSensorClose = { 0, 2750 };
+struct Sensor distanceSensorStart = { 3, 800 };
+struct Sensor distanceSensorClose = { 3,  1500};
 
 // FUNCTIONS 1!!!!
 
@@ -243,10 +243,20 @@ void drumCollectionSequence(){
             printf("Channel 1 ");
         }
         printf("pipe detected! ");
-        msleep(600);
-        setServoPosition(door,500);
-        mrp(2,75,225);
+        msleep(1000);
+        setServoPosition(door,400);
+        msleep(250);
+        mrp(2,100,225);
+        msleep(500);
+        setServoPosition(door,600);
+        msleep(250);
+        setServoPosition(door,400);
         msleep(2000);
+        //moveTime(1,200);
+        //moveTime(-1,150);
+        msleep(500);
+        //moveTime(1,200);
+        //moveTime(-1,250);
         for(int i=0;i<8;i++)
         {
             printf("%d,",colorList[i]);
@@ -265,16 +275,17 @@ void shake(){
     msleep(340);
     
    	mav(2,0);
-    for(int i=1400;i>=1200;i-=50)
+    for(int i=1500;i>=1400;i-=25)
     {
         mav(2,0);
         mav(2,-i);
         msleep(200);
         mav(2,0);
-        msleep(500);
+        msleep(250);
         mav(2,i);
         msleep(200);
         mav(2,0);
+        msleep(250);
         
     }
     
@@ -320,6 +331,12 @@ void dropoffSequence()
         {
             printf("%d,",colorList[i]);
         }
+        if(pCount==1)
+        {
+            mav(2,-450);
+            msleep(250);
+            mav(2,0);
+        }
     }
     if(firstColor==0)
     {
@@ -356,6 +373,18 @@ void dropoffSequence()
     }
     printf("\nDROP OFF SEQUENCE DONE");
 }
+void turnToPoleSequence(int direction,int count){
+    int time = seconds();
+	while(!isSensorAboveThreshold(distanceSensorClose)&&count<=3){
+        mav(1,625*direction);
+        mav(0,-350*direction);
+        if(seconds()-time>3.5){
+            count++;
+        	turnToPoleSequence(direction*-1,count);
+            break;
+        }
+    }
+}
 
 
 
@@ -363,13 +392,14 @@ int main()
 {
     enable_servos();
     setServoPosition(door,400);
-    setServoPosition(micro,4000);
+    setServoPosition(micro,0);
+    camera_open();
     /*
     mtp(2,100,0);
     setArmPositionInc(1000);*/
     //msleep(5000); ///DELETE OR LESSEN TIME BEFORE COMP
     //test individual functions easily (make sure to put break)
-    switch(1)
+    switch(6)
     {
         case 0: // Run this in the competition
             waitUntilLight();
@@ -380,6 +410,7 @@ int main()
             run();
             break;
         case 2:
+            setServoPosition(micro,740);
 			dropoffSequence();
             break;
             
@@ -392,6 +423,21 @@ int main()
             moveCorrectedUntil(1,bothSeesTape);
             moveCorrectedTime(1,1500);
             break;
+        case 5:
+            
+            turnToPoleSequence(1,0);
+            setServoPosition(micro,740);
+            mav(1,580);
+            mav(0,-750);
+            msleep(200);
+            mav(1,0);
+            mav(0,0);
+            dropoffSequence();
+            break;
+        case 6:
+            setArmPositionInc(2047);
+            setServoPosition(door,2047);
+            drumCollectionSequence();
         default:
             break;
     }
@@ -401,7 +447,7 @@ int main()
 void run()
 {   
     //Moves out from starting box to the drums
-    camera_open();
+    
     printf("starting\n");
     double startTime=seconds();
     setArmPositionInc(950);
@@ -411,42 +457,50 @@ void run()
     moveUntil(1, bothSeesTape);
     moveTime(1,2000);
     setArmPositionInc(2047);
-    moveTime(-1,250);
-    rotateTime(-1,250);
+    setServoPosition(door,2047);
+    moveTime(-1,300);
+    //rotateTime(-1,250);
     printf("before delay with %f\n",seconds()-startTime);
     
     
     //Collects Drums
-    //drumCollectionSequence();
-    setArmPositionInc(1000);
+    drumCollectionSequence();
+    setServoPosition(door,400);
+    setArmPositionInc(950);
     
      //Work in prog, to move from tape, back to first pole
     
     moveUntil(-1,bothSeesTape);
     msleep(300);
     
-    rotateTime(-1,2250);
-    setServoPosition(micro,1400);
+    rotateTime(-1,2750);
+    moveTime(1,3900);
     msleep(200);
-    moveTime(1,5750);
-    rotateTime(-1,150);
+    rotateTime(1,250); 
+    turnToPoleSequence(1,0);
+    setServoPosition(micro,740);
+    msleep(200);
+    rotateTime(1,150);
+    moveTime(1,1250);
     
    	dropoffSequence();
-    
+    msleep(6000);
     moveTime(-1,2000);
     moveUntil(-1,seesTapeRight);
     moveTime(-1,1500);
     moveUntil(-1,seesTapeRight);
-    moveTime(-1,1500);
+    //moveTime(-1,1500);
     msleep(300);
     rotateTime(-1,1000);
     rotateUntil(-1,seesTapeRight);
+    rotateTime(1,1200);
     moveCorrectedUntil(1,bothSeesTape);
     moveTime(1,1000);
     moveCorrectedUntil(1,bothSeesTape);
     moveTime(1,1000);
     moveCorrectedTime(1,1000);
     rotateTime(1,150);
+    moveTime(1,250);
     
     dropoffSequence();
    
